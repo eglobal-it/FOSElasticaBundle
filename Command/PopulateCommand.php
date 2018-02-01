@@ -4,11 +4,12 @@ namespace FOS\ElasticaBundle\Command;
 
 use FOS\ElasticaBundle\Event\IndexPopulateEvent;
 use FOS\ElasticaBundle\Event\TypePopulateEvent;
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\DialogHelper;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use FOS\ElasticaBundle\IndexManager;
 use FOS\ElasticaBundle\Provider\ProviderRegistry;
 use FOS\ElasticaBundle\Resetter;
@@ -17,10 +18,10 @@ use Symfony\Component\Console\Helper\ProgressBar;
 /**
  * Populate the search index.
  */
-class PopulateCommand extends ContainerAwareCommand
+class PopulateCommand extends Command
 {
     /**
-     * @var \Symfony\Component\EventDispatcher\EventDispatcherInterface
+     * @var EventDispatcherInterface
      */
     private $dispatcher;
 
@@ -43,6 +44,21 @@ class PopulateCommand extends ContainerAwareCommand
      * @var Resetter
      */
     private $resetter;
+
+    public function __construct(
+        EventDispatcherInterface $dispatcher,
+        IndexManager $indexManager,
+        ProviderRegistry $providerRegistry,
+        Resetter $resetter
+    )
+    {
+        parent::__construct();
+
+        $this->dispatcher = $dispatcher;
+        $this->indexManager = $indexManager;
+        $this->providerRegistry = $providerRegistry;
+        $this->resetter = $resetter;
+    }
 
     /**
      * @see Symfony\Component\Console\Command\Command::configure()
@@ -68,10 +84,6 @@ class PopulateCommand extends ContainerAwareCommand
      */
     protected function initialize(InputInterface $input, OutputInterface $output)
     {
-        $this->dispatcher = $this->getContainer()->get('event_dispatcher');
-        $this->indexManager = $this->getContainer()->get('fos_elastica.index_manager');
-        $this->providerRegistry = $this->getContainer()->get('fos_elastica.provider_registry');
-        $this->resetter = $this->getContainer()->get('fos_elastica.resetter');
         $this->progressClosureBuilder = new ProgressClosureBuilder();
 
         if (!$input->getOption('no-overwrite-format') && class_exists('Symfony\\Component\\Console\\Helper\\ProgressBar')) {
