@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <service id="fos_elastica.console.command.search" class="FOS\ElasticaBundle\Command\SearchCommand">
+            <argument id="fos_elastica.index_manager" type="service" />
+
+            <tag name="console.command" />
+        </service>
+
+        <service id="fos_elastica.console.command.reset" class="FOS\ElasticaBundle\Command\ResetCommand">
+            <argument id="fos_elastica.index_manager" type="service" />
+            <argument id="fos_elastica.resetter" type="service" />
+
+            <tag name="console.command" />
+        </service>
+
+        <service id="fos_elastica.console.command.populate" class="FOS\ElasticaBundle\Command\PopulateCommand">
+            <argument id="event_dispatcher" type="service" />
+            <argument id="fos_elastica.index_manager" type="service" />
+            <argument id="fos_elastica.provider_registry" type="service" />
+            <argument id="fos_elastica.resetter" type="service" />
+
+            <tag name="console.command" />
+        </service>
+    </services>
+</container>

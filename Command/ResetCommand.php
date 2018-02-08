@@ -2,7 +2,7 @@
 
 namespace FOS\ElasticaBundle\Command;
 
-use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
+use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -12,7 +12,7 @@ use FOS\ElasticaBundle\Resetter;
 /**
  * Reset search indexes.
  */
-class ResetCommand extends ContainerAwareCommand
+class ResetCommand extends Command
 {
     /**
      * @var IndexManager
@@ -23,6 +23,14 @@ class ResetCommand extends ContainerAwareCommand
      * @var Resetter
      */
     private $resetter;
+
+    public function __construct(IndexManager $indexManager, Resetter $resetter)
+    {
+        parent::__construct();
+
+        $this->indexManager = $indexManager;
+        $this->resetter = $resetter;
+    }
 
     /**
      * @see Symfony\Component\Console\Command\Command::configure()
@@ -36,15 +44,6 @@ class ResetCommand extends ContainerAwareCommand
             ->addOption('force', null, InputOption::VALUE_NONE, 'Force index deletion if same name as alias')
             ->setDescription('Reset search indexes')
         ;
-    }
-
-    /**
-     * @see Symfony\Component\Console\Command\Command::initialize()
-     */
-    protected function initialize(InputInterface $input, OutputInterface $output)
-    {
-        $this->indexManager = $this->getContainer()->get('fos_elastica.index_manager');
-        $this->resetter = $this->getContainer()->get('fos_elastica.resetter');
     }
 
     /**
