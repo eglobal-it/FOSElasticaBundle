@@ -2,10 +2,10 @@
 
 namespace FOS\ElasticaBundle\DependencyInjection;
 
+use Symfony\Component\DependencyInjection\ChildDefinition;
 use Symfony\Component\HttpKernel\DependencyInjection\Extension;
 use Symfony\Component\DependencyInjection\Loader\XmlFileLoader;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
-use Symfony\Component\DependencyInjection\DefinitionDecorator;
 use Symfony\Component\DependencyInjection\Reference;
 use Symfony\Component\Config\FileLocator;
 use InvalidArgumentException;
@@ -103,7 +103,7 @@ class FOSElasticaExtension extends Extension
         foreach ($clients as $name => $clientConfig) {
             $clientId = sprintf('fos_elastica.client.%s', $name);
 
-            $clientDef = new DefinitionDecorator('fos_elastica.client_prototype');
+            $clientDef = new ChildDefinition('fos_elastica.client_prototype');
             $clientDef->replaceArgument(0, $clientConfig);
 
             $logger = $clientConfig['connections'][0]['logger'];
@@ -140,7 +140,7 @@ class FOSElasticaExtension extends Extension
             $indexId = sprintf('fos_elastica.index.%s', $name);
             $indexName = isset($index['index_name']) ? $index['index_name'] : $name;
 
-            $indexDef = new DefinitionDecorator('fos_elastica.index_prototype');
+            $indexDef = new ChildDefinition('fos_elastica.index_prototype');
             $indexDef->replaceArgument(0, $indexName);
             $indexDef->addTag('fos_elastica.index', array(
                 'name' => $name,
@@ -204,11 +204,11 @@ class FOSElasticaExtension extends Extension
          * an index and type names were "collection" and an index, respectively.
          */
         $transformerId = sprintf('fos_elastica.elastica_to_model_transformer.collection.%s', $name);
-        $transformerDef = new DefinitionDecorator('fos_elastica.elastica_to_model_transformer.collection');
+        $transformerDef = new ChildDefinition('fos_elastica.elastica_to_model_transformer.collection');
         $container->setDefinition($transformerId, $transformerDef);
 
         $finderId = sprintf('fos_elastica.finder.%s', $name);
-        $finderDef = new DefinitionDecorator('fos_elastica.finder');
+        $finderDef = new ChildDefinition('fos_elastica.finder');
         $finderDef->replaceArgument(0, $index);
         $finderDef->replaceArgument(1, new Reference($transformerId));
 
@@ -229,7 +229,7 @@ class FOSElasticaExtension extends Extension
             $indexName = $indexConfig['name'];
 
             $typeId = sprintf('%s.%s', $indexConfig['reference'], $name);
-            $typeDef = new DefinitionDecorator('fos_elastica.type_prototype');
+            $typeDef = new ChildDefinition('fos_elastica.type_prototype');
             $typeDef->replaceArgument(0, $name);
 
             if (method_exists($typeDef, 'setFactory')) {
@@ -249,32 +249,32 @@ class FOSElasticaExtension extends Extension
             );
 
             foreach (array(
-                'dynamic_templates',
-                'properties',
-                '_all',
-                '_boost',
-                '_id',
-                '_parent',
-                '_routing',
-                '_source',
-                '_timestamp',
-                '_ttl',
-            ) as $field) {
+                         'dynamic_templates',
+                         'properties',
+                         '_all',
+                         '_boost',
+                         '_id',
+                         '_parent',
+                         '_routing',
+                         '_source',
+                         '_timestamp',
+                         '_ttl',
+                     ) as $field) {
                 if (isset($type[$field])) {
                     $typeConfig['mapping'][$field] = $type[$field];
                 }
             }
 
             foreach (array(
-                'persistence',
-                'serializer',
-                'index_analyzer',
-                'search_analyzer',
-                'dynamic',
-                'date_detection',
-                'dynamic_date_formats',
-                'numeric_detection',
-            ) as $field) {
+                         'persistence',
+                         'serializer',
+                         'index_analyzer',
+                         'search_analyzer',
+                         'dynamic',
+                         'date_detection',
+                         'dynamic_date_formats',
+                         'numeric_detection',
+                     ) as $field) {
                 $typeConfig['config'][$field] = array_key_exists($field, $type) ?
                     $type[$field] :
                     null;
@@ -299,7 +299,7 @@ class FOSElasticaExtension extends Extension
 
             if ($container->hasDefinition('fos_elastica.serializer_callback_prototype')) {
                 $typeSerializerId = sprintf('%s.serializer.callback', $typeId);
-                $typeSerializerDef = new DefinitionDecorator('fos_elastica.serializer_callback_prototype');
+                $typeSerializerDef = new ChildDefinition('fos_elastica.serializer_callback_prototype');
 
                 if (isset($type['serializer']['groups'])) {
                     $typeSerializerDef->addMethodCall('setGroups', array($type['serializer']['groups']));
@@ -370,7 +370,7 @@ class FOSElasticaExtension extends Extension
          */
         $abstractId = sprintf('fos_elastica.elastica_to_model_transformer.prototype.%s', $typeConfig['driver']);
         $serviceId = sprintf('fos_elastica.elastica_to_model_transformer.%s.%s', $indexName, $typeName);
-        $serviceDef = new DefinitionDecorator($abstractId);
+        $serviceDef = new ChildDefinition($abstractId);
         $serviceDef->addTag('fos_elastica.elastica_to_model_transformer', array('type' => $typeName, 'index' => $indexName));
 
         // Doctrine has a mandatory service as first argument
@@ -406,7 +406,7 @@ class FOSElasticaExtension extends Extension
             'fos_elastica.model_to_elastica_transformer';
 
         $serviceId = sprintf('fos_elastica.model_to_elastica_transformer.%s.%s', $indexName, $typeName);
-        $serviceDef = new DefinitionDecorator($abstractId);
+        $serviceDef = new ChildDefinition($abstractId);
         $serviceDef->replaceArgument(0, array(
             'identifier' => $typeConfig['identifier'],
         ));
@@ -454,7 +454,7 @@ class FOSElasticaExtension extends Extension
         }
 
         $serviceId = sprintf('fos_elastica.object_persister.%s.%s', $indexName, $typeName);
-        $serviceDef = new DefinitionDecorator($abstractId);
+        $serviceDef = new ChildDefinition($abstractId);
         foreach ($arguments as $i => $argument) {
             $serviceDef->replaceArgument($i, $argument);
         }
@@ -485,7 +485,7 @@ class FOSElasticaExtension extends Extension
          * index and type names were "prototype" and a driver, respectively.
          */
         $providerId = sprintf('fos_elastica.provider.%s.%s', $indexName, $typeName);
-        $providerDef = new DefinitionDecorator('fos_elastica.provider.prototype.'.$typeConfig['driver']);
+        $providerDef = new ChildDefinition('fos_elastica.provider.prototype.'.$typeConfig['driver']);
         $providerDef->addTag('fos_elastica.provider', array('index' => $indexName, 'type' => $typeName));
         $providerDef->replaceArgument(0, new Reference($objectPersisterId));
         $providerDef->replaceArgument(2, $typeConfig['model']);
@@ -521,7 +521,7 @@ class FOSElasticaExtension extends Extension
          */
         $abstractListenerId = sprintf('fos_elastica.listener.prototype.%s', $typeConfig['driver']);
         $listenerId = sprintf('fos_elastica.listener.%s.%s', $indexName, $typeName);
-        $listenerDef = new DefinitionDecorator($abstractListenerId);
+        $listenerDef = new ChildDefinition($abstractListenerId);
         $listenerDef->replaceArgument(0, new Reference($objectPersisterId));
         $listenerDef->replaceArgument(2, array(
             'identifier' => $typeConfig['identifier'],
@@ -611,7 +611,7 @@ class FOSElasticaExtension extends Extension
             $finderId = $typeConfig['finder']['service'];
         } else {
             $finderId = sprintf('fos_elastica.finder.%s.%s', $indexName, $typeName);
-            $finderDef = new DefinitionDecorator('fos_elastica.finder');
+            $finderDef = new ChildDefinition('fos_elastica.finder');
             $finderDef->replaceArgument(0, $typeRef);
             $finderDef->replaceArgument(1, new Reference($elasticaToModelId));
             $container->setDefinition($finderId, $finderDef);
